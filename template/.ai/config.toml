@@ -1,0 +1,44 @@
+[project]
+name = "overclock"
+version = "0.1.0"
+description = "ADDS Project Template"
+
+[codebuddy]
+path = ".ai"
+
+[agents.pm]
+name = "Project Manager"
+prompt = ".ai/prompts/pm_prompt.md"
+trigger = "project_start,requirements_change"
+
+[agents.architect]
+name = "Architect"
+prompt = ".ai/prompts/architect_prompt.md"
+trigger = "pm_complete,architecture_missing"
+
+[agents.developer]
+name = "Developer"
+prompt = ".ai/prompts/developer_prompt.md"
+trigger = "architecture_approved,feature_assigned"
+
+[agents.tester]
+name = "Tester"
+prompt = ".ai/prompts/tester_prompt.md"
+trigger = "feature_testing,regression_check"
+
+[agents.reviewer]
+name = "Reviewer"
+prompt = ".ai/prompts/reviewer_prompt.md"
+trigger = "tests_passed,security_audit"
+
+[workflow]
+feature_lifecycle = ["pending", "in_progress", "testing", "completed"]
+regression_priority = "high"
+max_retries = 3
+session_timeout_minutes = 30
+
+[files]
+feature_list = ".ai/feature_list.md"
+progress = ".ai/progress.md"
+architecture = ".ai/architecture.md"
+core_guidelines = "CORE_GUIDELINES.md"
