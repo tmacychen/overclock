@@ -93,13 +93,18 @@ impl FromStr for Role {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "pm" | "project_manager" => Ok(Role::Pm),
-            "architect" => Ok(Role::Architect),
-            "developer" | "dev" => Ok(Role::Developer),
-            "tester" => Ok(Role::Tester),
-            "reviewer" => Ok(Role::Reviewer),
+            // Project Manager
+            "pm" | "p" | "project_manager" => Ok(Role::Pm),
+            // Architect
+            "architect" | "a" | "arch" => Ok(Role::Architect),
+            // Developer
+            "developer" | "d" | "dev" => Ok(Role::Developer),
+            // Tester
+            "tester" | "t" | "test" => Ok(Role::Tester),
+            // Reviewer
+            "reviewer" | "r" | "review" => Ok(Role::Reviewer),
             _ => Err(format!(
-                "未知角色: '{}'。可用角色: pm, architect, developer, tester, reviewer",
+                "未知角色: '{}'。可用角色: pm(p), architect(a), developer(d), tester(t), reviewer(r)",
                 s
             )),
         }
