@@ -12,7 +12,6 @@ pub fn handle_run(role_name: &str) -> Result<()> {
     };
 
     let cwd = std::env::current_dir().context("无法获取当前工作目录")?;
-
     let config_path = cwd.join(".ai/config.toml");
 
     if !config_path.exists() {
@@ -31,7 +30,6 @@ pub fn handle_run(role_name: &str) -> Result<()> {
 
 fn run_codebuddy(_config: &Config, role: &Role, project_path: &Path) -> Result<()> {
     let codebuddy_path = find_codebuddy()?;
-
     let prompt_path = project_path.join(role.prompt_file());
 
     if !prompt_path.exists() {
@@ -40,6 +38,12 @@ fn run_codebuddy(_config: &Config, role: &Role, project_path: &Path) -> Result<(
             prompt_path.display()
         ));
     }
+
+    let system_prompt = create_system_prompt(role, &prompt_path)?;
+    let temp_prompt_path = project_path.join(format!(".ai/.system_{}.md", role.as_str()));
+
+    std::fs::write(&temp_prompt_path, system_prompt)
+        .context("无法创建临时系统提示词文件")?;
 
     println!("{}", format!("角色: {}", role.name()).yellow().bold());
     println!("{}", format!("职责: {}", role.description()).dimmed());
@@ -50,14 +54,17 @@ fn run_codebuddy(_config: &Config, role: &Role, project_path: &Path) -> Result<(
 
     let mut child = Command::new(&codebuddy_path)
         .current_dir(project_path)
+        .arg("--system-prompt-file")
+        .arg(&temp_prompt_path)
         .env("OVERCLOCK_ROLE", role.as_str())
         .env("OVERCLOCK_ROLE_NAME", role.name())
         .env("OVERCLOCK_ROLE_DESCRIPTION", role.description())
-        .env("OVERCLOCK_PROMPT_FILE", role.prompt_file())
         .spawn()
         .context("无法启动 codebuddy")?;
 
     let status = child.wait().context("等待 codebuddy 进程时出错")?;
+
+    let _ = std::fs::remove_file(&temp_prompt_path);
 
     if status.success() {
         println!();
@@ -72,6 +79,30 @@ fn run_codebuddy(_config: &Config, role: &Role, project_path: &Path) -> Result<(
     }
 
     Ok(())
+}
+
+fn create_system_prompt(role: &Role, prompt_path: &Path) -> Result<String> {
+    let base_prompt = std::fs::read_to_string(prompt_path)
+        .context("无法读取提示词文件")?;
+
+    Ok(format!(
+        r#"# 系统角色设定
+
+你当前的角色是: **{}**
+你的职责是: {}
+
+---
+
+{}
+
+---
+
+现在开始你的工作。记住始终保持角色身份，按照上述职责执行任务。
+"#,
+        role.name(),
+        role.description(),
+        base_prompt
+    ))
 }
 
 fn find_codebuddy() -> Result<String> {
