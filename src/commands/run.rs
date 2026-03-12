@@ -28,7 +28,7 @@ pub fn handle_run(role_name: &str) -> Result<()> {
     run_codebuddy(&config, &role, &cwd)
 }
 
-fn run_codebuddy(_config: &Config, role: &Role, project_path: &Path) -> Result<()> {
+fn run_codebuddy(config: &Config, role: &Role, project_path: &Path) -> Result<()> {
     let codebuddy_path = find_codebuddy()?;
     let prompt_path = project_path.join(role.prompt_file());
 
@@ -45,8 +45,12 @@ fn run_codebuddy(_config: &Config, role: &Role, project_path: &Path) -> Result<(
     std::fs::write(&temp_prompt_path, system_prompt)
         .context("无法创建临时系统提示词文件")?;
 
+    // 生成角色固定的 session-id，实现角色独立记忆
+    let session_id = format!("overclock-{}-{}", config.project.name, role.as_str());
+
     println!("{}", format!("角色: {}", role.name()).yellow().bold());
     println!("{}", format!("职责: {}", role.description()).dimmed());
+    println!("{}", format!("会话 ID: {}", session_id).dimmed());
     println!("{}", format!("提示词: {}", role.prompt_file()).dimmed());
     println!();
     println!("{}", "正在启动 codebuddy...".dimmed());
@@ -56,6 +60,8 @@ fn run_codebuddy(_config: &Config, role: &Role, project_path: &Path) -> Result<(
         .current_dir(project_path)
         .arg("--system-prompt-file")
         .arg(&temp_prompt_path)
+        .arg("--session-id")
+        .arg(&session_id)
         .env("OVERCLOCK_ROLE", role.as_str())
         .env("OVERCLOCK_ROLE_NAME", role.name())
         .env("OVERCLOCK_ROLE_DESCRIPTION", role.description())
